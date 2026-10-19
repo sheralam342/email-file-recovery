@@ -11,7 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS to make the app look cleaner
+# Custom CSS for a professional LinkedIn-ready look
 st.markdown("""
     <style>
     .main {
@@ -23,6 +23,7 @@ st.markdown("""
         height: 3em;
         background-color: #ff4b4b;
         color: white;
+        font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -36,14 +37,23 @@ This app connects to your email server and filters through your history to find 
 # --- Sidebar: Connection Settings ---
 st.sidebar.header("🔐 Connection Settings")
 
-# Professional Secret Handling: 
-# It checks if you have a secrets.toml file. If not, it shows empty boxes.
+# Check for secrets.toml file for convenience
 default_email = st.secrets.get("EMAIL", "")
 default_pass = st.secrets.get("APP_PASSWORD", "")
 
-email_user = st.sidebar.text_input("Email Address", value=default_email, type="password")
-email_pass = st.sidebar.text_input("App Password", value=default_pass, type="password", 
-                                   help="Use the 16-character App Password from Google Settings.")
+# BOTH fields are now type="password" to hide them during screen recordings
+email_user = st.sidebar.text_input(
+    "Email Address", 
+    value=default_email, 
+    type="password", 
+    help="Your email will be hidden for privacy."
+)
+email_pass = st.sidebar.text_input(
+    "App Password", 
+    value=default_pass, 
+    type="password", 
+    help="Use the 16-character App Password from Google Settings."
+)
 
 st.sidebar.divider()
 
@@ -70,7 +80,7 @@ if st.button("🚀 Start Recovery Scan"):
                 mail = imaplib.IMAP4_SSL("imap.gmail.com")
                 mail.login(email_user, email_pass)
                 
-                # IMPORTANT: We select "[Gmail]/All Mail" to find sent, archived, and inbox items
+                # SELECT ALL MAIL: This finds sent, archived, and inbox items
                 mail.select('"[Gmail]/All Mail"') 
 
                 # 2. Build the IMAP Search Query
@@ -80,60 +90,4 @@ if st.button("🚀 Start Recovery Scan"):
                 query += ')'
 
                 status, messages = mail.search(None, query)
-                email_ids = messages[0].split()
-
-                if not email_ids:
-                    st.warning("No emails found matching those criteria.")
-                else:
-                    st.success(f"Found {len(email_ids)} matching emails. Extracting attachments...")
-                    
-                    found_files = False
-                    # 3. Loop through emails to find attachments
-                    for e_id in email_ids:
-                        res, msg_data = mail.fetch(e_id, "(RFC822)")
-                        for response_part in msg_data:
-                            if isinstance(response_part, tuple):
-                                msg = email.message_from_bytes(response_part[1])
-                                
-                                # Decode the email subject
-                                subject_raw = msg.get("Subject", "No Subject")
-                                subject = decode_header(subject_raw)[0][0]
-                                if isinstance(subject, bytes):
-                                    subject = subject.decode()
-
-                                # Walk through the email parts to find files
-                                for part in msg.walk():
-                                    if part.get_content_maintype() == 'multipart':
-                                        continue
-                                    if part.get('Content-Disposition') is None:
-                                        continue
-
-                                    filename = part.get_filename()
-                                    if filename:
-                                        found_files = True
-                                        # Decode filename
-                                        decoded_filename = decode_header(filename)[0][0]
-                                        if isinstance(decoded_filename, bytes):
-                                            decoded_filename = decoded_filename.decode()
-                                        
-                                        # 4. Display results in professional expanders
-                                        with st.expander(f"📄 {decoded_filename}"):
-                                            st.write(f"**Subject:** {subject}")
-                                            st.download_button(
-                                                label="📥 Download File",
-                                                data=part.get_payload(decode=True),
-                                                file_name=decoded_filename,
-                                                key=f"{e_id}_{decoded_filename}"
-                                            )
-                    
-                    if not found_files:
-                        st.info("Emails were found, but none of them contained physical attachments.")
-                
-                mail.logout()
-        except Exception as e:
-            st.error(f"Connection failed: {e}")
-            st.info("Troubleshooting: Check if IMAP is enabled in Gmail settings and you are using an App Password.")
-
-# --- Footer ---
-st.divider()
-st.caption("Developed as a Data Recovery Portfolio Project | Built with Python & Streamlit")
+                email_ids =
