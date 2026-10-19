@@ -41,7 +41,7 @@ st.sidebar.header("🔐 Connection Settings")
 default_email = st.secrets.get("EMAIL", "")
 default_pass = st.secrets.get("APP_PASSWORD", "")
 
-email_user = st.sidebar.text_input("Email Address", value=default_email)
+email_user = st.sidebar.text_input("Email Address", value=default_email, type="password")
 email_pass = st.sidebar.text_input("App Password", value=default_pass, type="password", 
                                    help="Use the 16-character App Password from Google Settings.")
 
