@@ -90,4 +90,60 @@ if st.button("🚀 Start Recovery Scan"):
                 query += ')'
 
                 status, messages = mail.search(None, query)
-                email_ids =
+                email_ids = messages[0].split()
+
+                if not email_ids:
+                    st.warning("No emails found matching those criteria.")
+                else:
+                    st.success(f"Found {len(email_ids)} matching emails. Extracting attachments...")
+                    
+                    found_files = False
+                    # 3. Loop through emails to find attachments
+                    for e_id in email_ids:
+                        res, msg_data = mail.fetch(e_id, "(RFC822)")
+                        for response_part in msg_data:
+                            if isinstance(response_part, tuple):
+                                msg = email.message_from_bytes(response_part[1])
+                                
+                                # Decode the email subject
+                                subject_raw = msg.get("Subject", "No Subject")
+                                subject = decode_header(subject_raw)[0][0]
+                                if isinstance(subject, bytes):
+                                    subject = subject.decode()
+
+                                # Walk through the email parts to find files
+                                for part in msg.walk():
+                                    if part.get_content_maintype() == 'multipart':
+                                        continue
+                                    if part.get('Content-Disposition') is None:
+                                        continue
+
+                                    filename = part.get_filename()
+                                    if filename:
+                                        found_files = True
+                                        # Decode filename
+                                        decoded_filename = decode_header(filename)[0][0]
+                                        if isinstance(decoded_filename, bytes):
+                                            decoded_filename = decoded_filename.decode()
+                                        
+                                        # 4. Display results in professional expanders
+                                        with st.expander(f"📄 {decoded_filename}"):
+                                            st.write(f"**Subject:** {subject}")
+                                            st.download_button(
+                                                label="📥 Download File",
+                                                data=part.get_payload(decode=True),
+                                                file_name=decoded_filename,
+                                                key=f"{e_id}_{decoded_filename}"
+                                            )
+                    
+                    if not found_files:
+                        st.info("Emails were found, but none of them contained physical attachments.")
+                
+                mail.logout()
+        except Exception as e:
+            st.error(f"Connection failed: {e}")
+            st.info("Troubleshooting: \n1. Ensure IMAP is Enabled in Gmail Settings\n2. Use a 16-character App Password\n3. Check for a Google Security Alert email.")
+
+# --- Footer ---
+st.divider()
+st.caption("Developed as a Data Recovery Portfolio Project | Built with Python & Streamlit")
